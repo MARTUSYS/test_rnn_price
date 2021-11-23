@@ -66,7 +66,7 @@ class data_price():
 
     def transformation_data(self, window=60):
         """
-        Разделяет на X и Y и преобразует данные, погдотавливает тест
+        Разделяет на X и Y и преобразует данные, подготавливает тест
         :return:
         """
         self.window = window
@@ -170,10 +170,8 @@ class lstm_model():
 
         self.model = keras.Sequential([
             layers.Bidirectional(
-                layers.LSTM(units=units, dropout=0.2, return_sequences=True)
-                # keras.layers.LSTM(units=50, dropout=0.2, return_sequences=True, input_shape=(X_train.shape[1], 1))
+                layers.LSTM(units=units, dropout=0.2, return_sequences=True)  # input_shape=(X_train.shape[1], 1))
             ),
-            # Дабавить бачьнормализацию
             layers.Bidirectional(
                 keras.layers.LSTM(units=units, dropout=0.2, return_sequences=True)
             ),
@@ -183,7 +181,6 @@ class lstm_model():
 
             layers.LSTM(units=units, dropout=0.2),
 
-            # Adding the output layer
             layers.Dense(units=1)
 
         ])
