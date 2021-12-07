@@ -11,12 +11,6 @@ import datetime
 
 from sklearn.preprocessing import MinMaxScaler
 
-import configparser
-
-key_config = configparser.ConfigParser()
-key_config.read('key_config.ini')
-key = key_config['alphavantage']['key']
-
 
 def to_datetime(df):
     date = datetime.datetime.strptime(str(df).split(' ')[0], '%Y-%m-%d')
@@ -24,7 +18,10 @@ def to_datetime(df):
 
 
 class data_price():
-    def __init__(self, name, num_shape_test=360):
+    def __init__(self, name, key, num_shape_test=360):
+
+        self.key = key
+
         self.name = name
         self.num_shape_test = num_shape_test
         self.window = None
@@ -47,7 +44,7 @@ class data_price():
         Получение данных и разделение на train и test
         :return:
         """
-        ts = TimeSeries(key=key, output_format='pandas')  # numpy
+        ts = TimeSeries(key=self.key, output_format='pandas')  # numpy
         self.data, meta_data = ts.get_daily(symbol=self.name, outputsize='full')
         # self.data = self.data.index.sort_values.reset_index(drop=True)
         self.data = self.data.iloc[::-1]
