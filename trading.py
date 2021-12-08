@@ -18,13 +18,13 @@ def to_datetime(df):
 
 
 class data_price():
-    def __init__(self, name, key, num_shape_test=360):
+    def __init__(self, name, key, num_shape_test=360, window=60):
 
         self.key = key
 
         self.name = name
         self.num_shape_test = num_shape_test
-        self.window = None
+        self.window = window
 
         self.data = None
 
@@ -38,6 +38,9 @@ class data_price():
         self.df_volume = None
 
         self.sc = MinMaxScaler(feature_range=(0, 1))
+
+        self.get_price()
+        self.transformation_data(self.window)
 
     def get_price(self):
         """
@@ -61,12 +64,11 @@ class data_price():
         self.train = self.data.iloc[:-self.num_shape_test, 0:4].values
         self.test = self.data.iloc[-self.num_shape_test:, 0:4].values
 
-    def transformation_data(self, window=60):
+    def transformation_data(self, window):
         """
         Разделяет на X и Y и преобразует данные, подготавливает тест
         :return:
         """
-        self.window = window
         # Преобразование для обучения
         train_scaled = self.sc.fit_transform(self.train)
 
