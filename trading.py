@@ -58,8 +58,8 @@ class data_price():
         self.data['Date'] = self.data['Date'].apply(lambda x: to_datetime(x))
 
         # Разделение для временного ряда на train и test только по столбцу "цена закрытия"
-        self.train = self.data.iloc[:-self.num_shape_test, 3:4].values
-        self.test = self.data.iloc[-self.num_shape_test:, 3:4].values
+        self.train = self.data.iloc[:-self.num_shape_test, 0:4].values
+        self.test = self.data.iloc[-self.num_shape_test:, 0:4].values
 
     def transformation_data(self, window=60):
         """
@@ -74,9 +74,9 @@ class data_price():
         self.y = []  # Price on next day
 
         for i in range(window, train_scaled.shape[0]):
-            X_train_ = np.reshape(train_scaled[i - window:i, 0], (window, 1))
+            X_train_ = np.reshape(train_scaled[i - window:i, 0:train_scaled.shape[-1]], (window, train_scaled.shape[-1]))  ##
             self.x.append(X_train_)
-            self.y.append(train_scaled[i, 0])
+            self.y.append(train_scaled[i, :])  ##
         self.x = np.stack(self.x)
         self.y = np.stack(self.y)
         print('x:', self.x.shape)
@@ -86,13 +86,13 @@ class data_price():
         self.df_volume = np.vstack((self.train, self.test))
 
         inputs = self.df_volume[self.df_volume.shape[0] - self.test.shape[0] - window:]
-        inputs = inputs.reshape(-1, 1)
+        # inputs = inputs.reshape(-1, 1)  ##
         inputs = self.sc.transform(inputs)
 
         num_2 = self.num_shape_test + window
         X_test = []
         for i in range(window, num_2):
-            X_test_ = np.reshape(inputs[i - window:i, 0], (window, 1))
+            X_test_ = np.reshape(inputs[i - window:i, 0:inputs.shape[-1]], (window, inputs.shape[-1]))  ##
             X_test.append(X_test_)
         self.X_test = np.stack(X_test)
         print("X_test:", self.X_test.shape)
@@ -111,7 +111,7 @@ class data_price():
         """
         data_f_pr = self.test[-self.window:]
         data_f_pr = self.sc.transform(data_f_pr)
-        data_f_pr = data_f_pr.reshape(1, self.window, 1)
+        data_f_pr = data_f_pr.reshape(1, self.window, data_f_pr.shape[-1])  ###
         return data_f_pr
 
     def get_training_data(self):
@@ -133,6 +133,7 @@ class data_price():
         plt.show()
 
     def metrics(self, predict, k=0.9):
+        print('1. open   2. high  3. low  4. close')
         starting_date = round(self.data.shape[0] * k)
 
         predict = self.sc.inverse_transform(predict)
@@ -178,7 +179,7 @@ class lstm_model():
 
             layers.LSTM(units=units, dropout=0.2),
 
-            layers.Dense(units=1)
+            layers.Dense(units=4)  ##
 
         ])
         if self.compile_lr_schedule:
@@ -250,16 +251,22 @@ class lstm_model():
 
         predict = []
 
-        data_from_predict = data_from_predict.reshape(window, 1)
+        data_from_predict = data_from_predict.reshape(window, data_from_predict.shape[-1])  ##
 
         for _ in tqdm(range(interval)):
-            predict_ = self.model.predict(data_from_predict[-window:].reshape(1, window, 1))
-            predict.append(predict_[0, 0])
+            predict_ = self.model.predict(data_from_predict[-window:].reshape(1, window, data_from_predict.shape[-1]))  ##
+            predict.append(predict_[0, :])  ##
             data_from_predict = np.row_stack((data_from_predict, predict_))
 
-        predict = data_price_class.get_inverse_data(np.array(predict).reshape(-1, 1))
+        predict = data_price_class.get_inverse_data(np.array(predict))  ##
 
+        # predict = predict.reshape(predict.shape[-1], predict.shape[0])
+        # label = ['open', 'high', 'low', 'close']
+        #
         fig, axes = plt.subplots(figsize=(6, 2), dpi=100)
-        axes.plot([i for i in range(predict.shape[0])], predict)
+        # for i in range(len(label)):
+        axes.plot(predict)
+
+        axes.legend(['open', 'high', 'low', 'close'])
 
         return predict
