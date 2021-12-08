@@ -69,6 +69,7 @@ class data_price():
         Разделяет на X и Y и преобразует данные, подготавливает тест
         :return:
         """
+        self.window = window
         # Преобразование для обучения
         train_scaled = self.sc.fit_transform(self.train)
 
