@@ -46,7 +46,7 @@ class data_price():
         self.get_price()
         self.transformation_data(self.window)
 
-    def get_price(self, path):
+    def get_price(self):
         """
         Получение данных и разделение на train и test
         :return:
