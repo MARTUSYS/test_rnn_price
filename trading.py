@@ -165,7 +165,7 @@ class data_price():
 
 
 class lstm_model():
-    def __init__(self, compile_lr_schedule=True, units=50, learning_rate=1e-3):
+    def __init__(self, compile_lr_schedule=True, units=50, dropout=0.2, learning_rate=1e-3):
         self.model = None
         self.history = None
         self.LEARNING_RATE = learning_rate
@@ -176,16 +176,16 @@ class lstm_model():
 
         self.model = keras.Sequential([
             layers.Bidirectional(
-                layers.LSTM(units=units, dropout=0.2, return_sequences=True)  # input_shape=(X_train.shape[1], 1))
+                layers.LSTM(units=units, dropout=dropout, return_sequences=True)  # input_shape=(X_train.shape[1], 1))
             ),
             layers.Bidirectional(
-                keras.layers.LSTM(units=units, dropout=0.2, return_sequences=True)
+                keras.layers.LSTM(units=units, dropout=dropout, return_sequences=True)
             ),
             layers.Bidirectional(
-                layers.LSTM(units=units, dropout=0.2, return_sequences=True)
+                layers.LSTM(units=units, dropout=dropout, return_sequences=True)
             ),
 
-            layers.LSTM(units=units, dropout=0.2),
+            layers.LSTM(units=units, dropout=dropout),
 
             layers.Dense(units=4)  ##
 
