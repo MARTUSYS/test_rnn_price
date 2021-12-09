@@ -18,13 +18,14 @@ def to_datetime(df):
 
 
 class data_price():
-    def __init__(self, name, key, num_shape_test=360, window=60):
+    def __init__(self, name, key, num_shape_test=360, window=60, date_start=None):
 
         self.key = key
 
         self.name = name
         self.num_shape_test = num_shape_test
         self.window = window
+        self.date_start = date_start
 
         self.data = None
 
@@ -59,6 +60,10 @@ class data_price():
         self.data['4. close'] = self.data['4. close'].astype(float)
         self.data['Date'] = self.data.index.values
         self.data['Date'] = self.data['Date'].apply(lambda x: to_datetime(x))
+
+        # Фильтр по дате ("%Y-%m-%d")
+        if self.date_start:
+            self.data = self.data[(self.data['Date'] > self.date_start)]
 
         # Разделение для временного ряда на train и test только по столбцу "цена закрытия"
         self.train = self.data.iloc[:-self.num_shape_test, 0:4].values
