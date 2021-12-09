@@ -194,7 +194,7 @@ class data_price():
 
         plt.figure(figsize=(20, 7))
         if self.path:
-            plt.plot(self.data['time'].values[starting_date:], self.df_volume.iloc[starting_date:, 0:4], color='red',
+            plt.plot(self.data['time'].values[starting_date:], self.df_volume[starting_date:, 0:4], color='red',
                      label=f'Real {self.name} Stock Price')
             plt.plot(self.data['time'][-predict.shape[0]:].values, predict, color='blue',
                      label=f'Predicted {self.name} Stock Price')
