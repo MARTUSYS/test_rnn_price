@@ -1,6 +1,8 @@
 from alpha_vantage.timeseries import TimeSeries
 
 import numpy as np
+import pandas as pd
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -18,7 +20,7 @@ def to_datetime(df):
 
 
 class data_price():
-    def __init__(self, name, key, num_shape_test=360, window=60, date_start=None):
+    def __init__(self, name, key, num_shape_test=360, window=60, date_start=None, path=None):
 
         self.key = key
 
@@ -28,6 +30,7 @@ class data_price():
         self.date_start = date_start
 
         self.data = None
+        self.path = path
 
         self.train = None
         self.x = None
@@ -43,31 +46,66 @@ class data_price():
         self.get_price()
         self.transformation_data(self.window)
 
-    def get_price(self):
+    def get_price(self, path):
         """
         Получение данных и разделение на train и test
         :return:
         """
-        ts = TimeSeries(key=self.key, output_format='pandas')  # numpy
-        self.data, meta_data = ts.get_daily(symbol=self.name, outputsize='full')
-        # self.data = self.data.index.sort_values.reset_index(drop=True)
-        self.data = self.data.iloc[::-1]
+        if path:
 
-        # ti = TechIndicators(key=key, output_format='pandas')
-        # data_RSI, meta_data = ti.get_rsi(symbol=self.name, interval='daily', time_period=60, series_type='close')
+            self.data = pd.read_csv(self.path)
+            self.data = self.data.iloc[::-1]
 
-        # Извлечение даты из индекса
-        self.data['4. close'] = self.data['4. close'].astype(float)
-        self.data['Date'] = self.data.index.values
-        self.data['Date'] = self.data['Date'].apply(lambda x: to_datetime(x))
+            # Разделение для временного ряда на train и test только по столбцу "цена закрытия"
+            self.train = self.data.iloc[:-self.num_shape_test, 1:].values
+            self.test = self.data.iloc[-self.num_shape_test:, 1:].values
 
-        # Фильтр по дате ("%Y-%m-%d")
-        if self.date_start:
-            self.data = self.data[(self.data['Date'] > self.date_start)]
+            '''ticker = 'baba'
+            adjusted = 'true'
 
-        # Разделение для временного ряда на train и test только по столбцу "цена закрытия"
-        self.train = self.data.iloc[:-self.num_shape_test, 0:4].values
-        self.test = self.data.iloc[-self.num_shape_test:, 0:4].values
+            for i in [1, 5, 15, 30, 60]:
+                time.sleep(15)
+                interval = f'{i}min'
+                print(interval)
+
+                for year in range(1, 3):
+                    for month in range(1, 13):
+                        print(f'year: {year}\tmonth: {month}')
+                        date = f'year{year}month{month}'
+
+                        csv_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY_EXTENDED&symbol={ticker}&interval={interval}&slice={date}&adjusted={adjusted}&apikey={key}&datatype=csv&outputsize=full'
+
+                        if year == 1 and month == 1:
+                            df = pd.read_csv(csv_url)
+
+                        time.sleep(15)
+                        df = pd.concat([df, pd.read_csv(csv_url)])
+
+                df.to_csv(f'{ticker}-{interval}.csv', index=False, header=True)
+                df = pd.read_csv(f'{ticker}-{interval}.csv')'''
+        else:
+            ts = TimeSeries(key=self.key, output_format='pandas')  # numpy
+            self.data, meta_data = ts.get_daily(symbol=self.name, outputsize='full')
+            # self.data = self.data.index.sort_values.reset_index(drop=True)
+
+
+            # ti = TechIndicators(key=key, output_format='pandas')
+            # data_RSI, meta_data = ti.get_rsi(symbol=self.name, interval='daily', time_period=60, series_type='close')
+
+            # Извлечение даты из индекса
+            # self.data['4. close'] = self.data['4. close'].astype(float)
+            self.data['Date'] = self.data.index.values
+            self.data['Date'] = self.data['Date'].apply(lambda x: to_datetime(x))
+
+            # Фильтр по дате ("%Y-%m-%d")
+            if self.date_start:
+                self.data = self.data[(self.data['Date'] > self.date_start)]
+
+            self.data = self.data.iloc[::-1]
+
+            # Разделение для временного ряда на train и test только по столбцу "цена закрытия"
+            self.train = self.data.iloc[:-self.num_shape_test, 0:4].values
+            self.test = self.data.iloc[-self.num_shape_test:, 0:4].values
 
     def transformation_data(self, window):
         """
@@ -133,7 +171,10 @@ class data_price():
 
     def grafica(self):
         plt.figure(figsize=(20, 7))
-        plt.plot(self.data['Date'], self.data['4. close'].values, label=f'{self.name} Stock Price', color='red')
+        if self.path:
+            plt.plot(self.data['time'], self.data['close'].values, label=f'{self.name} Stock Price', color='red')
+        else:
+            plt.plot(self.data['Date'], self.data['4. close'].values, label=f'{self.name} Stock Price', color='red')
         plt.xticks(np.arange(100, self.data.shape[0], 200))
         plt.xlabel('Date')
         plt.ylabel('Price ($)')
@@ -141,7 +182,7 @@ class data_price():
         plt.show()
 
     def metrics(self, predict, k=0.9):
-        print('1. open   2. high  3. low  4. close')
+        print('open   high  low  close')
         starting_date = round(self.data.shape[0] * k)
 
         predict = self.sc.inverse_transform(predict)
@@ -152,10 +193,17 @@ class data_price():
         print("RMSE:", np.sqrt(np.mean(diff ** 2)))
 
         plt.figure(figsize=(20, 7))
-        plt.plot(self.data['Date'].values[starting_date:], self.df_volume[starting_date:], color='red',
-                 label=f'Real {self.name} Stock Price')
-        plt.plot(self.data['Date'][-predict.shape[0]:].values, predict, color='blue',
-                 label=f'Predicted {self.name} Stock Price')
+        if self.path:
+            plt.plot(self.data['time'].values[starting_date:], self.df_volume[starting_date:], color='red',
+                     label=f'Real {self.name} Stock Price')
+            plt.plot(self.data['time'][-predict.shape[0]:].values, predict, color='blue',
+                     label=f'Predicted {self.name} Stock Price')
+        else:
+            plt.plot(self.data['Date'].values[starting_date:], self.df_volume[starting_date:], color='red',
+                     label=f'Real {self.name} Stock Price')
+            plt.plot(self.data['Date'][-predict.shape[0]:].values, predict, color='blue',
+                     label=f'Predicted {self.name} Stock Price')
+
         plt.xticks(np.arange(100, self.data[starting_date:].shape[0], 200))
         plt.title(f'{self.name} Stock Price Prediction')
         plt.xlabel('Date')
@@ -165,7 +213,7 @@ class data_price():
 
 
 class lstm_model():
-    def __init__(self, compile_lr_schedule=True, units=50, dropout=0.2, learning_rate=1e-3):
+    def __init__(self, compile_lr_schedule=True, units=50, dropout=0.2, learning_rate=1e-3, outputsize=4):
         self.model = None
         self.history = None
         self.LEARNING_RATE = learning_rate
@@ -187,7 +235,7 @@ class lstm_model():
 
             layers.LSTM(units=units, dropout=dropout),
 
-            layers.Dense(units=4)  ##
+            layers.Dense(units=outputsize)  ##
 
         ])
         if self.compile_lr_schedule:
@@ -275,6 +323,9 @@ class lstm_model():
         # for i in range(len(label)):
         axes.plot(predict)
 
-        axes.legend(['open', 'high', 'low', 'close'])
+        if data_price_class.path:
+            axes.legend(['open', 'high', 'low', 'close', 'volume'])
+        else:
+            axes.legend(['open', 'high', 'low', 'close'])
 
         return predict
