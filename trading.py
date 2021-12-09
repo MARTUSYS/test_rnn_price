@@ -218,10 +218,10 @@ class lstm_model():
             monitor='val_loss', patience=self.PATIENCE, restore_best_weights=True)
         reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
             monitor='val_loss',
-            factor=0.2,
+            factor=0.5,
             verbose=1,
-            patience=5,
-            min_lr=0.001
+            patience=10,
+            min_lr=1e-5
         )
         # early_stop / reduce_lr / checkpoint // Остановка обучения / Снижеение скорости обучения / Сохраниение модели
         if self.compile_lr_schedule:
