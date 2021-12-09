@@ -51,7 +51,7 @@ class data_price():
         Получение данных и разделение на train и test
         :return:
         """
-        if path:
+        if self.path:
 
             self.data = pd.read_csv(self.path)
             self.data = self.data.iloc[::-1]
