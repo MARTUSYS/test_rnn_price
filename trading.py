@@ -57,8 +57,8 @@ class data_price():
             self.data = self.data.iloc[::-1]
 
             # Разделение для временного ряда на train и test только по столбцу "цена закрытия"
-            self.train = self.data.iloc[:-self.num_shape_test, 1:].values
-            self.test = self.data.iloc[-self.num_shape_test:, 1:].values
+            self.train = self.data.iloc[:-self.num_shape_test, 1:5].values
+            self.test = self.data.iloc[-self.num_shape_test:, 1:5].values
 
             '''ticker = 'baba'
             adjusted = 'true'
@@ -194,7 +194,7 @@ class data_price():
 
         plt.figure(figsize=(20, 7))
         if self.path:
-            plt.plot(self.data['time'].values[starting_date:], self.df_volume[starting_date:, 0:4], color='red',
+            plt.plot(self.data['time'].values[starting_date:], self.df_volume[starting_date:], color='red',
                      label=f'Real {self.name} Stock Price')
             plt.plot(self.data['time'][-predict.shape[0]:].values, predict, color='blue',
                      label=f'Predicted {self.name} Stock Price')
@@ -324,7 +324,7 @@ class lstm_model():
         axes.plot(predict)
 
         if data_price_class.path:
-            axes.legend(['open', 'high', 'low', 'close', 'volume'])
+            axes.legend(['open', 'high', 'low', 'close'])  # 'volume'
         else:
             axes.legend(['open', 'high', 'low', 'close'])
 
